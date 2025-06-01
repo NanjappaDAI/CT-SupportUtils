@@ -5,7 +5,7 @@
     <test name="Regular_Test_01">
         <parameter name="application.name" value="unmodified" />
         <classes>
-            <class name="tests.RegularTest"/>
+            <class name="tests.checkLisbonDevices"/>
         </classes>
     </test>
 <!--    <test name="Regular_Test_02">-->
