@@ -4,5 +4,5 @@ Simple straight line repo to check device health in Lisbon cloud before nightly 
 
 ### Prerequisites
 ```agsl
-mvn clean test -DxmlFile=regular_tests.xml
+mvn clean test -DxmlFile=healthCheckTests.xml
 ```
