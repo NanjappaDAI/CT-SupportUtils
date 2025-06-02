@@ -8,6 +8,15 @@
   <name>Archetype - CT-Self-Healing-Tests</name>
   <url>http://maven.apache.org</url>
 
+  <repositories>
+    <repository>
+      <id>Experitest</id>
+      <name>YourName</name>
+      <url>https://lisbon.experitest.com/repo/</url>
+      <layout>default</layout>
+    </repository>
+  </repositories>
+
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
@@ -26,6 +35,12 @@
       <groupId>io.appium</groupId>
       <artifactId>java-client</artifactId>
       <version>7.6.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.experitest</groupId>
+      <artifactId>appium-seetest-extension</artifactId>
+      <version>25.4</version>
     </dependency>
 
 <!--    <dependency>-->
