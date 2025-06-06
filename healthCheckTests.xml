@@ -1,11 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="Test Automation">
-    <parameter name="device.query" value="@os='android'" />
-    <test name="Regular_Test_01">
-        <parameter name="application.name" value="unmodified" />
-        <classes>
-            <class name="tests.CheckLisbonDevicesTest"/>
-        </classes>
-    </test>
+<suite name="Parallel Test Suite" parallel="tests" thread-count="5">
+  <test name="Parallel_Device_Test">
+    <classes>
+      <class name="tests.CheckLisbonDevicesTest" />
+    </classes>
+  </test>
 </suite>
