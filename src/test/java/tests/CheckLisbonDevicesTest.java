@@ -26,8 +26,8 @@ import org.testng.annotations.Test;
 
 public class CheckLisbonDevicesTest {
 
-    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
-    //    private static final String accessKey= "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
+//    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
+        private static final String accessKey= "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
     private static final String cloudURL = "https://lisbon.experitest.com";
     private static final Queue<String> deviceInfoList = new ConcurrentLinkedQueue<>();
     private static ThreadLocal<AppiumDriver> driver = new ThreadLocal<>();
