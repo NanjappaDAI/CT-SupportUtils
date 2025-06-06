@@ -145,9 +145,11 @@ public class CheckLisbonDevicesTest {
     @AfterSuite
     public void printAllCollectedDeviceIDs() {
         System.out.println("start-here");
+        System.out.println("<html><body><table border=1>");
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
         System.out.println("<tr><td> Lisbon cloud monitoring report </td><td>" + dateTime + "</td></tr>");
         deviceInfoList.forEach(System.out::println);
+        System.out.println("</table></body></html>");
         System.out.println("end-here");
     }
 
