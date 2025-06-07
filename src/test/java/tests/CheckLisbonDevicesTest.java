@@ -29,9 +29,10 @@ import org.testng.annotations.Test;
 public class CheckLisbonDevicesTest {
 
 //    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
-        private static final String accessKey= "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
+    private static final String accessKey= "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
     private static final String cloudURL = "https://lisbon.experitest.com";
-    private static final Queue<String> deviceInfoList = new ConcurrentLinkedQueue<>();
+    private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
+    private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static ThreadLocal<AppiumDriver> driver = new ThreadLocal<>();
     protected SeeTestClient seetest = null;
 
@@ -39,8 +40,7 @@ public class CheckLisbonDevicesTest {
     @DataProvider(name = "devices", parallel = true)
     public Object[][] provideDevices() throws Exception {
 
-        HttpResponse<String> response =
-                Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
+        HttpResponse<String> response = Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
         JSONArray dataArray = new JSONObject(response.getBody()).getJSONArray("data");
         List<Object[]> deviceData = new ArrayList<>();
 
@@ -98,7 +98,7 @@ public class CheckLisbonDevicesTest {
             List<WebElement> elements = driver.get().findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
             WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
             String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
-            deviceInfoList.add(log);
+            iOSDeviceInfoList.add(log);
             driver.get().quit();
 
         } else if ("Android".equalsIgnoreCase(deviceOS)) {
@@ -117,7 +117,7 @@ public class CheckLisbonDevicesTest {
             deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
 
             String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(" ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
-            deviceInfoList.add(log);
+            androidDeviceInfoList.add(log);
             driver.get().quit();
         }
     }
@@ -129,7 +129,8 @@ public class CheckLisbonDevicesTest {
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
         System.out.println("<tr><td> Lisbon cloud monitoring report </td><td>" + dateTime + "</td></tr>");
         System.out.println("<tr>" + "<td> Device Name </td>"+ "<td> DHM </td>" + "<td> Correct WiFi? </td>" + "<td> Device Language </td>" + "</tr>");
-        deviceInfoList.forEach(System.out::println);
+        iOSDeviceInfoList.forEach(System.out::println);
+        androidDeviceInfoList.forEach(System.out::println);
         System.out.println("</table></body></html>");
         System.out.println("end-here");
     }
