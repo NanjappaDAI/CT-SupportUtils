@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.AfterTest;
@@ -55,7 +57,12 @@ public class CheckLisbonDevicesTest {
                 deviceData.add(new Object[]{ udid, os, deviceId, DHM, deviceName });
             }
 
-//            if ("Available".equalsIgnoreCase(status) && "iOS".equalsIgnoreCase(os)) {
+            if ("In Use".equalsIgnoreCase(status)) {
+                Unirest.post(cloudURL + "/" + deviceId + "/api/v1/devices/release")
+                        .header("Authorization", "Bearer " + accessKey).asString();
+            }
+
+//            if ("Available".equalsIgnoreCase(status) && "Android".equalsIgnoreCase(os)) {
 //                deviceData.add(new Object[]{ udid, os, deviceId, DHM, deviceName });
 //            }
         }
@@ -70,10 +77,12 @@ public class CheckLisbonDevicesTest {
         DesiredCapabilities dc = new DesiredCapabilities();
         dc.setCapability("digitalai:testName", "Lisbon sanity check");
         dc.setCapability("digitalai:accessKey", accessKey);
+        dc.setCapability("newCommandTimeout", 120);
         dc.setCapability(MobileCapabilityType.UDID, udid);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
-        // Release device
-//        Unirest.post(cloudURL + "/" + deviceID + "/api/v1/devices/release").header("Authorization", "Bearer " + accessKey).asString();
+
+
+
         String deviceLanguage;
         String WiFI;
         if ("iOS".equalsIgnoreCase(deviceOS)) {
@@ -82,23 +91,13 @@ public class CheckLisbonDevicesTest {
             dc.setCapability("appiumVersion", "2.16.2");
             driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
             driver.get().executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
-
             Thread.sleep(1000);
             driver.get().executeScript("mobile: activateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
-            Thread.sleep(3000);
-            String pageSource = driver.get().getPageSource().toLowerCase();
-            if (pageSource.toLowerCase().contains("id=\"settings\"")) {
-                deviceLanguage = "English";
-            } else {
-                deviceLanguage = "NOT ENGLISH";
-            }
-            String iOSWiFi = Stream.of("Faro", "Evora").filter(name -> pageSource.contains(name.toLowerCase())).findFirst().orElse(null);
-
-            if (DHM.toLowerCase().contains("porto") && iOSWiFi != null && iOSWiFi.toLowerCase().contains("evora")) {WiFI = "YES";}
-            else if (DHM.toLowerCase().contains("elvas") && iOSWiFi != null && iOSWiFi.toLowerCase().contains("faro")) {WiFI = "YES";}
-            else if (DHM.toLowerCase().contains("sintra") && iOSWiFi != null && iOSWiFi.toLowerCase().contains("faro")) {WiFI = "YES";}
-            else {WiFI = "WRONG WiFi";}
-            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + WiFI + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
+            Thread.sleep(2000);
+            deviceLanguage = driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']")).getAttribute("label");
+            List<WebElement> elements = driver.get().findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
+            WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
+            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
             deviceInfoList.add(log);
             driver.get().quit();
 
@@ -110,20 +109,14 @@ public class CheckLisbonDevicesTest {
             driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
 
             String result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
-            String ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("SSID")).findFirst().orElse("SSID not found");
+            String ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo")).findFirst().orElse("SSID not found");
 
             Thread.sleep(1500);
 
             result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
             deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
 
-
-            if (DHM.toLowerCase().contains("porto") && ssid.toLowerCase().contains("evora")) {WiFI = "YES";}
-            else if (DHM.toLowerCase().contains("elvas") && ssid.toLowerCase().contains("faro")) {WiFI = "YES";}
-            else if (DHM.toLowerCase().contains("sintra") && ssid.toLowerCase().contains("faro")) {WiFI = "YES";}
-            else {WiFI = "NO";}
-
-            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + WiFI + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
+            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(" ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
             deviceInfoList.add(log);
             driver.get().quit();
         }
@@ -135,7 +128,7 @@ public class CheckLisbonDevicesTest {
         System.out.println("<html><body><table border=1>");
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
         System.out.println("<tr><td> Lisbon cloud monitoring report </td><td>" + dateTime + "</td></tr>");
-        System.out.println("<tr>" + "<td> Device Name </td>" + "<td> Correct WiFi? </td>" + "<td> Device Language </td>" + "</tr>");
+        System.out.println("<tr>" + "<td> Device Name </td>"+ "<td> DHM </td>" + "<td> Correct WiFi? </td>" + "<td> Device Language </td>" + "</tr>");
         deviceInfoList.forEach(System.out::println);
         System.out.println("</table></body></html>");
         System.out.println("end-here");
