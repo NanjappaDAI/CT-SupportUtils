@@ -75,7 +75,7 @@ public class CheckLisbonDevicesTest {
     public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName)
             throws MalformedURLException, InterruptedException, UnirestException {
         DesiredCapabilities dc = new DesiredCapabilities();
-        dc.setCapability("digitalai:testName", "Lisbon sanity check");
+        dc.setCapability("digitalai:testName", "2.19.0 sanity check");
         dc.setCapability("digitalai:accessKey", accessKey);
         dc.setCapability("newCommandTimeout", 120);
         dc.setCapability(MobileCapabilityType.UDID, udid);
@@ -88,7 +88,7 @@ public class CheckLisbonDevicesTest {
         if ("iOS".equalsIgnoreCase(deviceOS)) {
             dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "iOS");
             dc.setCapability("bundleId", "com.apple.Preferences");
-            dc.setCapability("appiumVersion", "2.16.2");
+            dc.setCapability("appiumVersion", "2.19.0");
             driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
             driver.get().executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
             Thread.sleep(1000);
@@ -129,8 +129,8 @@ public class CheckLisbonDevicesTest {
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
         System.out.println("<tr><td> Lisbon cloud monitoring report </td><td>" + dateTime + "</td></tr>");
         System.out.println("<tr>" + "<td> Device Name </td>"+ "<td> DHM </td>" + "<td> Correct WiFi? </td>" + "<td> Device Language </td>" + "</tr>");
-        iOSDeviceInfoList.forEach(System.out::println);
         androidDeviceInfoList.forEach(System.out::println);
+        iOSDeviceInfoList.forEach(System.out::println);
         System.out.println("</table></body></html>");
         System.out.println("end-here");
     }
