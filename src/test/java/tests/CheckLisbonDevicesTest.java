@@ -105,7 +105,7 @@ public class CheckLisbonDevicesTest {
             dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
             dc.setCapability("appPackage", "com.android.settings");
             dc.setCapability("appActivity", "com.android.settings.Settings");
-            dc.setCapability("appiumVersion", "2.16.2");
+            dc.setCapability("appiumVersion", "2.19.0");
             driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
 
             String result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
