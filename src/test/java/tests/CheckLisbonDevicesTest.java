@@ -4,7 +4,6 @@ import com.experitest.appium.SeeTestClient;
 import com.google.common.collect.ImmutableMap;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Stream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.openqa.selenium.By;
@@ -28,8 +26,8 @@ import org.testng.annotations.Test;
 
 public class CheckLisbonDevicesTest {
 
-//    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
-    private static final String accessKey= System.getenv("KEY_TO_REBECCA");
+    //    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
+    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
     private static final String cloudURL = "https://lisbon.experitest.com";
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
@@ -40,7 +38,8 @@ public class CheckLisbonDevicesTest {
     @DataProvider(name = "devices", parallel = true)
     public Object[][] provideDevices() throws Exception {
 
-        HttpResponse<String> response = Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
+        HttpResponse<String> response =
+                Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
         JSONArray dataArray = new JSONObject(response.getBody()).getJSONArray("data");
         List<Object[]> deviceData = new ArrayList<>();
 
@@ -81,8 +80,6 @@ public class CheckLisbonDevicesTest {
         dc.setCapability(MobileCapabilityType.UDID, udid);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
 
-
-
         String deviceLanguage;
         String WiFI;
         if ("iOS".equalsIgnoreCase(deviceOS)) {
@@ -94,10 +91,13 @@ public class CheckLisbonDevicesTest {
             Thread.sleep(1000);
             driver.get().executeScript("mobile: activateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
             Thread.sleep(2000);
-            deviceLanguage = driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']")).getAttribute("label");
-            List<WebElement> elements = driver.get().findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
+            deviceLanguage =
+                    driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']")).getAttribute("label");
+            List<WebElement> elements = driver.get()
+                    .findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
             WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
-            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
+            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI
+                    + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
             iOSDeviceInfoList.add(log);
             driver.get().quit();
 
@@ -108,15 +108,22 @@ public class CheckLisbonDevicesTest {
             dc.setCapability("appiumVersion", "2.19.0");
             driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
 
-            String result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
-            String ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo")).findFirst().orElse("SSID not found");
+            String result = (String) driver.get()
+                    .executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
+            String ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo"))
+                    .findFirst().orElse("SSID not found");
 
             Thread.sleep(1500);
 
-            result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
-            deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
+            result = (String) driver.get()
+                    .executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
+            deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim)
+                    .filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
 
-            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(" ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
+            String log =
+                    "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(
+                            " ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>"
+                            + "</tr>";
             androidDeviceInfoList.add(log);
             driver.get().quit();
         }
@@ -128,9 +135,18 @@ public class CheckLisbonDevicesTest {
         System.out.println("<html><body><table border=1>");
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
         System.out.println("<tr><td> Lisbon cloud monitoring report </td><td>" + dateTime + "</td></tr>");
-        System.out.println("<tr>" + "<td> Device Name </td>"+ "<td> DHM </td>" + "<td> Correct WiFi? </td>" + "<td> Device Language </td>" + "</tr>");
-        androidDeviceInfoList.forEach(System.out::println);
-        iOSDeviceInfoList.forEach(System.out::println);
+        System.out.println("<tr>" + "<td> Device Name </td>" + "<td> DHM </td>" + "<td> Correct WiFi? </td>"
+                + "<td> Device Language </td>" + "</tr>");
+        List<String> sortedListAndroid = new ArrayList<>(androidDeviceInfoList);
+        Collections.sort(sortedListAndroid); // or use a custom Comparator
+        sortedListAndroid.forEach(System.out::println);
+
+//        androidDeviceInfoList.forEach(System.out::println);
+        List<String> sortedListiOS = new ArrayList<>(iOSDeviceInfoList);
+        Collections.sort(sortedListiOS); // or use a custom Comparator
+        sortedListiOS.forEach(System.out::println);
+
+//        iOSDeviceInfoList.forEach(System.out::println);
         System.out.println("</table></body></html>");
         System.out.println("end-here");
     }
