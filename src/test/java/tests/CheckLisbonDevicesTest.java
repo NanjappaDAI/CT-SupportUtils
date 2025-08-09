@@ -1,6 +1,5 @@
 package tests;
 
-import com.experitest.appium.SeeTestClient;
 import com.google.common.collect.ImmutableMap;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -32,7 +31,7 @@ public class CheckLisbonDevicesTest {
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static ThreadLocal<AppiumDriver> driver = new ThreadLocal<>();
-    protected SeeTestClient seetest = null;
+//    protected SeeTestClient seetest = null;
 
     // Data Provider for parallel execution
     @DataProvider(name = "devices", parallel = true)

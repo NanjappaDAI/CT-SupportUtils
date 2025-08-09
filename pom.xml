@@ -37,11 +37,11 @@
       <version>7.6.0</version>
     </dependency>
 
-    <dependency>
-      <groupId>com.experitest</groupId>
-      <artifactId>appium-seetest-extension</artifactId>
-      <version>25.4</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>com.experitest</groupId>-->
+<!--      <artifactId>appium-seetest-extension</artifactId>-->
+<!--      <version>25.7</version>-->
+<!--    </dependency>-->
 
 <!--    <dependency>-->
 <!--      <groupId>org.seleniumhq.selenium</groupId>-->
