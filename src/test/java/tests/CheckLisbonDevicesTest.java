@@ -102,7 +102,7 @@ public class CheckLisbonDevicesTest {
                 WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
                 driver.get().quit();
             } catch (Exception e) {
-                deviceLanguage = e.getMessage();
+                deviceLanguage = e.getClass().getSimpleName();
             }
             log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI
                     + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
