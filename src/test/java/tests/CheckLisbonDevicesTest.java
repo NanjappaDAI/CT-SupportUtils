@@ -79,52 +79,62 @@ public class CheckLisbonDevicesTest {
         dc.setCapability(MobileCapabilityType.UDID, udid);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
 
-        String deviceLanguage;
-        String WiFI;
+        String deviceLanguage ="";
+        String WiFI = null;
+
+
         if ("iOS".equalsIgnoreCase(deviceOS)) {
-            dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "iOS");
-            dc.setCapability("bundleId", "com.apple.Preferences");
-            dc.setCapability("appiumVersion", "2.19.0");
-            driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
-            driver.get().executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
-            Thread.sleep(1000);
-            driver.get().executeScript("mobile: activateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
-            Thread.sleep(2000);
-            deviceLanguage =
-                    driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']")).getAttribute("label");
-            List<WebElement> elements = driver.get()
-                    .findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
-            WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
+            try {
+                dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "iOS");
+                dc.setCapability("bundleId", "com.apple.Preferences");
+                dc.setCapability("appiumVersion", "2.19.0");
+                driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
+                driver.get()
+                        .executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
+                Thread.sleep(2000);
+                driver.get().executeScript("mobile: activateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
+                Thread.sleep(2000);
+                deviceLanguage = driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']"))
+                        .getAttribute("label");
+                List<WebElement> elements = driver.get()
+                        .findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
+                WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
+                driver.get().quit();
+            } catch (Exception e) {
+                deviceLanguage = e.getMessage();
+            }
             String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI
                     + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
             iOSDeviceInfoList.add(log);
-            driver.get().quit();
 
         } else if ("Android".equalsIgnoreCase(deviceOS)) {
-            dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
-            dc.setCapability("appPackage", "com.android.settings");
-            dc.setCapability("appActivity", "com.android.settings.Settings");
-            dc.setCapability("appiumVersion", "2.19.0");
-            driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
+            String ssid = null;
+            try {
+                dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
+                dc.setCapability("appPackage", "com.android.settings");
+                dc.setCapability("appActivity", "com.android.settings.Settings");
+                dc.setCapability("appiumVersion", "2.19.0");
+                driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
 
-            String result = (String) driver.get()
-                    .executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
-            String ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo"))
-                    .findFirst().orElse("SSID not found");
-
-            Thread.sleep(1500);
-
-            result = (String) driver.get()
-                    .executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
-            deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim)
-                    .filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
-
+                String result = (String) driver.get()
+                        .executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
+                ssid = Arrays.stream(result.split("\n")).map(String::trim)
+                        .filter(line -> line.contains("mWifiInfo")).findFirst().orElse("SSID not found");
+                Thread.sleep(1500);
+                result = (String) driver.get()
+                        .executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
+                deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim)
+                        .filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst()
+                        .orElse("Not found");
+                driver.get().quit();
+            } catch (Exception e) {
+                deviceLanguage = e.getMessage();
+            }
             String log =
                     "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(
                             " ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>"
                             + "</tr>";
             androidDeviceInfoList.add(log);
-            driver.get().quit();
         }
     }
 
