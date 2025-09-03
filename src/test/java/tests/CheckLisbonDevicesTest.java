@@ -112,7 +112,6 @@ public class CheckLisbonDevicesTest {
             String ssid = null;
             try {
                 dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
-                dc.setCapability(MobileCapabilityType.UDID, "R58R80TPQNL");
                 dc.setCapability("appPackage", "com.android.settings");
                 dc.setCapability("appActivity", "com.android.settings.Settings");
                 dc.setCapability("appiumVersion", "2.19.0");
