@@ -25,8 +25,8 @@ import org.testng.annotations.Test;
 
 public class CheckLisbonDevicesTest {
 
-    //    private static final String accessKey = "aut_1_az8i6BpWyjC92T6DNonJc1fTzKQ_SzJjtX-yuwnJq0w=";
-    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
+        private static final String accessKey = "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
+//    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
     private static final String cloudURL = "https://lisbon.experitest.com";
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
@@ -70,17 +70,18 @@ public class CheckLisbonDevicesTest {
 
     // Parallel Test Execution
     @Test(dataProvider = "devices")
-    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName)
-            throws MalformedURLException, InterruptedException {
+    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName) throws MalformedURLException, InterruptedException {
         DesiredCapabilities dc = new DesiredCapabilities();
         dc.setCapability("digitalai:testName", "2.19.0 sanity check");
         dc.setCapability("digitalai:accessKey", accessKey);
+        dc.setCapability("newSessionWaitTimeout", 10);
         dc.setCapability("newCommandTimeout", 120);
         dc.setCapability(MobileCapabilityType.UDID, udid);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
 
         String deviceLanguage ="";
         String WiFI = null;
+        String log;
 
 
         if ("iOS".equalsIgnoreCase(deviceOS)) {
@@ -103,7 +104,7 @@ public class CheckLisbonDevicesTest {
             } catch (Exception e) {
                 deviceLanguage = e.getMessage();
             }
-            String log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI
+            log = "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + WiFI
                     + "</td>" + "<td>" + deviceLanguage + "</td>" + "</tr>";
             iOSDeviceInfoList.add(log);
 
@@ -111,6 +112,7 @@ public class CheckLisbonDevicesTest {
             String ssid = null;
             try {
                 dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
+                dc.setCapability(MobileCapabilityType.UDID, "R58R80TPQNL");
                 dc.setCapability("appPackage", "com.android.settings");
                 dc.setCapability("appActivity", "com.android.settings.Settings");
                 dc.setCapability("appiumVersion", "2.19.0");
@@ -128,13 +130,19 @@ public class CheckLisbonDevicesTest {
                         .orElse("Not found");
                 driver.get().quit();
             } catch (Exception e) {
-                deviceLanguage = e.getMessage();
+                deviceLanguage = e.getClass().getSimpleName();
             }
-            String log =
-                    "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>" + ssid.split(
-                            " ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>"
-                            + "</tr>";
-            androidDeviceInfoList.add(log);
+            try {
+                 log =
+                        "<tr>" + "<td>" + deviceName + "</td>" + "<td>" + DHM.split("-")[0] + "</td>" + "<td>"
+                                + ssid.split(
+                                " ")[2].trim().replace("\"", "").trim() + "</td>" + "<td>" + deviceLanguage + "</td>"
+                                + "</tr>";
+                androidDeviceInfoList.add(log);
+            } catch (Exception e) {
+                log = "<tr>" + "<td>" + deviceName + "</td>" + "<td> </td>" + "<td> </td>" + "<td> </td>" + e.getClass().getSimpleName() + "</tr>";
+                androidDeviceInfoList.add(log);
+            }
         }
     }
 
