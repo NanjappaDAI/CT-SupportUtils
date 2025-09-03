@@ -74,7 +74,7 @@ public class CheckLisbonDevicesTest {
         DesiredCapabilities dc = new DesiredCapabilities();
         dc.setCapability("digitalai:testName", "2.19.0 sanity check");
         dc.setCapability("digitalai:accessKey", accessKey);
-        dc.setCapability("newSessionWaitTimeout", 10);
+        dc.setCapability("newSessionWaitTimeout", 180);
         dc.setCapability("newCommandTimeout", 120);
         dc.setCapability(MobileCapabilityType.UDID, udid);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
