@@ -88,7 +88,7 @@ public class CheckLisbonDevicesTest {
             try {
                 dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "iOS");
                 dc.setCapability("bundleId", "com.apple.Preferences");
-                dc.setCapability("appiumVersion", "2.19.0");
+                dc.setCapability("appiumVersion", "3.1.0");
                 driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
                 driver.get()
                         .executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
