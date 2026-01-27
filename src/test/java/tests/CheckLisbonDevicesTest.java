@@ -3,6 +3,7 @@ package tests;
 import com.google.common.collect.ImmutableMap;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
@@ -25,20 +26,31 @@ import org.testng.annotations.Test;
 
 public class CheckLisbonDevicesTest {
 
-        private static final String accessKey = "eyJhbGciOiJIUzI1NiJ9.eyJ4cC51Ijo0MiwieHAucCI6MywieHAubSI6MTcwMTAwMjYwNzIxMiwiZXhwIjoyMDE2MzYyNjA3LCJpc3MiOiJjb20uZXhwZXJpdGVzdCJ9.SMGYMR4IFha22QTlFFHg9UdyayG4kx4VcRHg7PjsYBY";
 //    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
     private static final String cloudURL = "https://lisbon.experitest.com";
+
+    HttpResponse<String> accessKeyResponse = Unirest.get(cloudURL + "/api/v2/test-requests/key").header("Authorization", "Basic YWRtaW46QWIxMjM0NTY=").asString();
+    JSONObject json = new JSONObject(accessKeyResponse.getBody());
+    String accessKey = json.getString("key");
+
+    HttpResponse<String> appiumVersionResponse = Unirest.get(cloudURL + "/api/v2/region-services/appiumVersionsSupported").header("Authorization", "Basic YWRtaW46QWIxMjM0NTY=").asString();
+    JSONObject jsonAppiumVersion = new JSONObject(appiumVersionResponse.getBody());
+    JSONArray appiumVersion = jsonAppiumVersion.getJSONArray("versions");
+    String defaultAppiumVersion = appiumVersion.getString(appiumVersion.length() - 1);
+
+
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static ThreadLocal<AppiumDriver> driver = new ThreadLocal<>();
+
+    public CheckLisbonDevicesTest() throws UnirestException {
+    }
 //    protected SeeTestClient seetest = null;
 
     // Data Provider for parallel execution
     @DataProvider(name = "devices", parallel = true)
     public Object[][] provideDevices() throws Exception {
-
-        HttpResponse<String> response =
-                Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
+        HttpResponse<String> response = Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
         JSONArray dataArray = new JSONObject(response.getBody()).getJSONArray("data");
         List<Object[]> deviceData = new ArrayList<>();
 
@@ -70,36 +82,39 @@ public class CheckLisbonDevicesTest {
 
     // Parallel Test Execution
     @Test(dataProvider = "devices")
-    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName) throws MalformedURLException, InterruptedException {
+    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName) {
         DesiredCapabilities dc = new DesiredCapabilities();
-        dc.setCapability("digitalai:testName", "2.19.0 sanity check");
+        dc.setCapability("digitalai:testName", "Sanity Check - " + defaultAppiumVersion );
         dc.setCapability("digitalai:accessKey", accessKey);
         dc.setCapability("newSessionWaitTimeout", 180);
         dc.setCapability("newCommandTimeout", 120);
         dc.setCapability(MobileCapabilityType.UDID, udid);
+        dc.setCapability("appiumVersion", defaultAppiumVersion);
         System.out.println("Thread " + Thread.currentThread().getId() + " -> Device: " + udid);
 
         String deviceLanguage ="";
         String WiFI = null;
         String log;
+        String ssid = null;
 
 
         if ("iOS".equalsIgnoreCase(deviceOS)) {
             try {
                 dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "iOS");
                 dc.setCapability("bundleId", "com.apple.Preferences");
-                dc.setCapability("appiumVersion", "3.1.0");
                 driver.set(new IOSDriver<>(new URL(cloudURL + "/wd/hub"), dc));
-                driver.get()
-                        .executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
+                driver.get().executeScript("mobile: terminateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
                 Thread.sleep(2000);
                 driver.get().executeScript("mobile: activateApp", ImmutableMap.of("bundleId", "com.apple.Preferences"));
                 Thread.sleep(2000);
-                deviceLanguage = driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']"))
-                        .getAttribute("label");
-                List<WebElement> elements = driver.get()
-                        .findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
+                deviceLanguage = driver.get().findElement(By.xpath("//*[@type='XCUIElementTypeApplication']")).getAttribute("label");
+                List<WebElement> elements = driver.get().findElements(By.xpath("//*[@label='Wi-Fi']/following-sibling::XCUIElementTypeStaticText"));
                 WiFI = elements.isEmpty() ? "N/A" : elements.get(0).getAttribute("label");
+
+                if (WiFI.isEmpty() || WiFI.equalsIgnoreCase("Off") || WiFI.equals("N/A")) {
+                    driver.get().executeScript("seetest:client.setNetworkConnection", "wifi", true);
+                    Thread.sleep(10000);
+                }
                 driver.get().quit();
             } catch (Exception e) {
                 deviceLanguage = e.getClass().getSimpleName();
@@ -109,24 +124,25 @@ public class CheckLisbonDevicesTest {
             iOSDeviceInfoList.add(log);
 
         } else if ("Android".equalsIgnoreCase(deviceOS)) {
-            String ssid = null;
             try {
                 dc.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
                 dc.setCapability("appPackage", "com.android.settings");
                 dc.setCapability("appActivity", "com.android.settings.Settings");
-                dc.setCapability("appiumVersion", "2.19.0");
                 driver.set(new AndroidDriver<>(new URL(cloudURL + "/wd/hub"), dc));
+                String result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
+                ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo")).findFirst().orElse(null);
 
-                String result = (String) driver.get()
-                        .executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
-                ssid = Arrays.stream(result.split("\n")).map(String::trim)
-                        .filter(line -> line.contains("mWifiInfo")).findFirst().orElse("SSID not found");
+                if (ssid == null) {
+                    System.out.println("SSID not found. Enabling Wi-Fi...");
+                    driver.get().executeScript("seetest:client.setNetworkConnection", "wifi", true);
+                    Thread.sleep(10000);
+                    result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "dumpsys", "args", List.of("wifi")));
+                    ssid = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.contains("mWifiInfo")).findFirst().orElse(null);
+                }
+
                 Thread.sleep(1500);
-                result = (String) driver.get()
-                        .executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
-                deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim)
-                        .filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst()
-                        .orElse("Not found");
+                result = (String) driver.get().executeScript("mobile: shell", Map.of("command", "getprop", "args", List.of()));
+                deviceLanguage = Arrays.stream(result.split("\n")).map(String::trim).filter(line -> line.toLowerCase().contains("persist.sys.locale")).findFirst().orElse("Not found");
                 driver.get().quit();
             } catch (Exception e) {
                 deviceLanguage = e.getClass().getSimpleName();
