@@ -36,7 +36,9 @@ public class CheckLisbonDevicesTest {
     HttpResponse<String> appiumVersionResponse = Unirest.get(cloudURL + "/api/v2/region-services/appiumVersionsSupported").header("Authorization", "Basic YWRtaW46QWIxMjM0NTY=").asString();
     JSONObject jsonAppiumVersion = new JSONObject(appiumVersionResponse.getBody());
     JSONArray appiumVersion = jsonAppiumVersion.getJSONArray("versions");
-    String defaultAppiumVersion = appiumVersion.getString(appiumVersion.length() - 1);
+//    String defaultAppiumVersion = appiumVersion.getString(appiumVersion.length() - 1);
+    String defaultAppiumVersion = "3.1.0";
+
 
 
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
