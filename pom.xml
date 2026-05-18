@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.example</groupId>
-  <artifactId>CT-Self-Healing-Tests</artifactId>
+  <artifactId>ct-health-check</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>Archetype - CT-Self-Healing-Tests</name>
+  <name>CT Health Check</name>
   <url>http://maven.apache.org</url>
 
   <repositories>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>com.experitest</groupId>
       <artifactId>seetest-client</artifactId>
-      <version>26.2</version>
+      <version>26.5</version>
     </dependency>
 
     <dependency>

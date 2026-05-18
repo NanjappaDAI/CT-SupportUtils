@@ -42,12 +42,14 @@ public class SeeTestClientSanityWebTests {
             JSONObject item = dataArray.getJSONObject(i);
             String udid = item.getString("udid");
             String os = item.getString("deviceOs");
+            String osVersion = item.getString("osVersion");
             String status = item.getString("displayStatus");
             String deviceId = item.getString("id");
-            String DHM = item.getString("agentName");
+            String region = item.getString("region");
             String deviceName = item.getString("deviceName");
+            String testNameSuffix = String.format("%s_%s_%s", udid, osVersion, region);
             if ("Available".equalsIgnoreCase(status)) {
-                deviceData.add(new Object[]{ udid, os, deviceId, DHM, deviceName });
+                deviceData.add(new Object[]{ udid, os, deviceId, testNameSuffix });
             }
         }
         for (Object[] device : deviceData) {
@@ -57,9 +59,9 @@ public class SeeTestClientSanityWebTests {
     }
 
     @Test(dataProvider = "devices")
-    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String DHM, String deviceName) {
+    public void getDeviceHealth(String udid, String deviceOS, String deviceID, String testNameSuffix) {
         GridClient grid = new GridClient(accessKey, cloudURL);
-        String testName = "SanitySeetestClientWebTest_" + deviceOS;
+        String testName = "Seetest Client Web Test_" + testNameSuffix;
         String deviceQuery = "@serialnumber='" + udid + "'";
         Client seetestClient = grid.lockDeviceForExecution(testName, deviceQuery, 10, TimeUnit.MINUTES.toMillis(5));
         client.set(seetestClient);

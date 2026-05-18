@@ -1,10 +1,13 @@
-## Digital.ai Continuous Testing - Lisbon Cloud Monitor
+## Digital.ai Continuous Testing - Cloud Monitor
 
-Simple straight line repo to check device health in Lisbon cloud before nightly execution
+Simple straight line repo to check device health : 
 
-### Prerequisites
+Below XML checks devices health in Lisbon cloud before nightly runs
+
 ```agsl
 mvn clean test -DxmlFile=healthCheckTests.xml
 ```
-
-Test Commit
+Below XML executes Sanity Web Tests for Seetest Client on Global Demo devices.  
+```agsl
+mvn clean test -DxmlFile=SanityWebTests.xml
+```
