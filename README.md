@@ -2,7 +2,7 @@
 
 Simple straight line repo to check device health : 
 
-Below XML checks devices health in Lisbon cloud before nightly runs
+Below XML checks devices health in Lisbon cloud before nightly runs using Appium OSS
 
 ```agsl
 mvn clean test -DxmlFile=healthCheckTests.xml
