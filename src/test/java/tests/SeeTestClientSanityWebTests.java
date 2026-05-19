@@ -20,14 +20,12 @@ import org.testng.annotations.Test;
 
 public class SeeTestClientSanityWebTests {
 
-    private static final String cloudURL = "https://lisbon.experitest.com";
-    //    private static final String cloudURL = "https://uscloud.experitest.com";
-    //    String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
+    private static final String cloudURL = "https://uscloud.experitest.com";
     private static final Queue<String> iOSDeviceInfoList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
-    String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
     private final ThreadLocal<Client> client = new ThreadLocal<>();
     private final ThreadLocal<GridClient> grid = new ThreadLocal<>();
+    String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
 
     public SeeTestClientSanityWebTests() {
     }
@@ -90,7 +88,8 @@ public class SeeTestClientSanityWebTests {
         } catch (UnirestException e) {
             throw new RuntimeException(e);
         }
-        client.get().report("API validation for returned Response: " + response.getStatusText(), response.getStatus() == 200);
+        client.get().report("API validation for returned Response: " + response.getStatusText(),
+                response.getStatus() == 200);
     }
 
     @AfterMethod(alwaysRun = true)
