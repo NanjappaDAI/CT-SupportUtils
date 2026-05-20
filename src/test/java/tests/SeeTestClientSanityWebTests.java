@@ -25,7 +25,9 @@ public class SeeTestClientSanityWebTests {
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
     private final ThreadLocal<Client> client = new ThreadLocal<>();
     private final ThreadLocal<GridClient> grid = new ThreadLocal<>();
+
     String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
+
 
     public SeeTestClientSanityWebTests() {
     }
@@ -61,7 +63,7 @@ public class SeeTestClientSanityWebTests {
         GridClient grid = new GridClient(accessKey, cloudURL);
         String testName = "Seetest Client Web Test_" + testNameSuffix;
         String deviceQuery = "@serialnumber='" + udid + "'";
-        Client seetestClient = grid.lockDeviceForExecution(testName, deviceQuery, 10, TimeUnit.MINUTES.toMillis(5));
+        Client seetestClient = grid.lockDeviceForExecution(testName, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
         client.set(seetestClient);
         client.get().setReporter("xml", "", testName);
 
@@ -88,14 +90,25 @@ public class SeeTestClientSanityWebTests {
         } catch (UnirestException e) {
             throw new RuntimeException(e);
         }
-        client.get().report("API validation for returned Response: " + response.getStatusText(),
-                response.getStatus() == 200);
+        client.get().report("API validation for returned Response: " + response.getStatusText(), response.getStatus() == 200);
     }
 
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
-        client.get().generateReport(false);
-        client.get().releaseClient();
+        Client currentClient = client.get();
+        if (currentClient != null) {
+            try {
+                currentClient.generateReport(false);
+            } catch (Exception e) {
+                System.out.println("Report generation failed: " + e.getMessage());
+            }
+            try {
+                currentClient.releaseClient();
+            } catch (Exception e) {
+                System.out.println("Release client failed: " + e.getMessage());
+            }
+            client.remove();
+        }
     }
 
     @AfterSuite
