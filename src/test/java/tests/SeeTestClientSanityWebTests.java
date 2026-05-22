@@ -55,7 +55,7 @@ public class SeeTestClientSanityWebTests {
             String region = item.getString("region");
             String deviceName = item.getString("deviceName");
             String testNameSuffix = String.format("%s_%s_%s", udid, osVersion, region);
-            if ("Available".equalsIgnoreCase(status)) {
+            if ("In Use".equalsIgnoreCase(status)) {
                 deviceData.add(new Object[]{ udid, os, deviceId, testNameSuffix });
             }
         }
