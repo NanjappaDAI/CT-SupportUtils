@@ -23,11 +23,11 @@ import org.testng.annotations.Test;
 
 public class SeeTestClientSanityWebTests {
 
-    private static final String cloudURL = "https://uscloud.experitest.com";
-    String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
+//    private static final String cloudURL = "https://uscloud.experitest.com";
+//    String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
 
-//    private static final String cloudURL = "https://lisbon.experitest.com";
-//    String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
+    private static final String cloudURL = "https://lisbon.experitest.com";
+    String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
 
     private static final Queue<String> failedTestsList = new ConcurrentLinkedQueue<>();
     private static final Queue<String> androidDeviceInfoList = new ConcurrentLinkedQueue<>();
