@@ -3,7 +3,7 @@
 <suite name="Parallel Test Suite"
   parallel="methods"
   thread-count="10"
-  data-provider-thread-count="10">
+  data-provider-thread-count="18">
 
   <test name="Parallel_Device_Test">
     <classes>

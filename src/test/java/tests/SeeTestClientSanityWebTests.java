@@ -12,10 +12,14 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.DataProvider;
@@ -25,7 +29,7 @@ public class SeeTestClientSanityWebTests {
 
     private static final String cloudURL = "https://uscloud.experitest.com";
     String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
-
+//
 //    private static final String cloudURL = "https://lisbon.experitest.com";
 //    String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
 
@@ -33,8 +37,11 @@ public class SeeTestClientSanityWebTests {
     private final ThreadLocal<Client> client = new ThreadLocal<>();
     private final ThreadLocal<GridClient> grid = new ThreadLocal<>();
 
+    private static final Logger log =  LoggerFactory.getLogger(SeeTestClientSanityWebTests.class);
+    private static final AtomicInteger testCounter = new AtomicInteger(0);
+
     private boolean GoogleValidated = false;
-    private StringBuilder log;
+    private StringBuilder logBuilder;
     private final int i=0;
 
     public SeeTestClientSanityWebTests() {
@@ -43,8 +50,7 @@ public class SeeTestClientSanityWebTests {
 
     @DataProvider(name = "devices", parallel = true)
     public Object[][] provideDevices() throws Exception {
-        HttpResponse<String> response =
-                Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
+        HttpResponse<String> response = Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
         JSONArray dataArray = new JSONObject(response.getBody()).getJSONArray("data");
         List<Object[]> deviceData = new ArrayList<>();
         for (int i = 0; i < dataArray.length(); i++) {
@@ -64,16 +70,28 @@ public class SeeTestClientSanityWebTests {
         return deviceData.toArray(new Object[0][0]);
     }
 
+
     @Test(dataProvider = "devices")
     public void getDeviceHealth(int i, String udid, String deviceOS, String deviceID , String osVersion) {
-        log = new StringBuilder();
+        int testId = testCounter.incrementAndGet();
+
+        MDC.put("testId", "Test-" + testId);
+        MDC.put("device", udid);
+
+        log.info("Starting test execution");
+        logBuilder = new StringBuilder();
         GridClient grid = new GridClient(accessKey, cloudURL);
         grid.setLogger(Utils.initDefaultLogger(Level.OFF));
-//        testName = "Seetest Client Web Test - " + udid + " - " + osVersion;
+
         String deviceQuery = "@serialnumber='" + udid + "'";
-        System.out.println(i + ". ClientWebTest - " +  udid);
+//        System.out.println(i + ". ClientWebTest - " +  udid);
         Client seetestClient = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
+        if (seetestClient == null) {
+            throw new RuntimeException("Failed to lock device: " + udid);
+        }
         client.set(seetestClient);
+//        System.out.println("LOCKED DEVICE: " + udid);
+
         client.get().setReporter("xml", "", "ClientWebTest - " + udid);
         if ("iOS".equalsIgnoreCase(deviceOS)) {
             iOSWebTest(udid);
@@ -103,14 +121,13 @@ public class SeeTestClientSanityWebTests {
 
     private void androidWebTest(String udid) {
         try {
-        client.get().launch("chrome:http://google.com/ncr", true, false);
+        client.get().launch("chrome:http://google.com", true, false);
         client.get().sleep(10000);
         client.get().waitForElement("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]", 0, 15000);
         if (client.get().isElementFound("WEB", "//*[@text='Sign in']", 0)) {
             client.get().report("Google home page seen", true);
             GoogleValidated = true;
-        } else if (client.get()
-                .isElementFound("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]", 0)) {
+        } else if (client.get().isElementFound("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]", 0)) {
             client.get().report("Can't open page element detected", false);
         } else if (client.get().isElementFound("WEB", "//*[@text='Got it']", 0)) {
             client.get().report("Google home page seen", true);
@@ -163,20 +180,20 @@ public class SeeTestClientSanityWebTests {
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
         Client currentClient = client.get();
-//        currentClient.setLogger(Utils.initDefaultLogger(Level.INFO));
-        if (currentClient != null) {
-            try {
-                currentClient.generateReport(false);
-            } catch (Exception e) {
-                System.out.println("Report generation failed: " + e.getMessage());
-            }
-            try {
-                currentClient.releaseClient();
-            } catch (Exception e) {
-                System.out.println("Release client failed: " + e.getMessage());
-            }
-            client.remove();
+        currentClient.setLogger(Utils.initDefaultLogger(Level.OFF));
+        try {
+            currentClient.generateReport(false);
+            log.info("Report generated successfully");
+        } catch (Exception e) {
+            log.error("Report generation failed: {}", e.getMessage(), e);
         }
+        try {
+            currentClient.releaseClient();
+            log.info("Client released successfully");
+        } catch (Exception e) {
+            log.error("Release client failed: {}", e.getMessage(), e);
+        }
+        client.remove();
     }
 
     private String getDump() {
@@ -187,14 +204,14 @@ public class SeeTestClientSanityWebTests {
             while (matcher.find() && count < 5) {
                 String text = matcher.group(1).trim();
                 if (!text.isBlank()) {
-                    if (log.length() > 0) {
-                        log.append(" ");
+                    if (logBuilder.length() > 0) {
+                        logBuilder.append(" ");
                     }
-                    log.append(text);
+                    logBuilder.append(text);
                     count++;
                 }
             }
-        return log.toString();
+        return logBuilder.toString();
     }
 
     @AfterSuite
@@ -204,7 +221,3 @@ public class SeeTestClientSanityWebTests {
         System.out.println("end-here");
     }
 }
-
-//        HttpResponse<String> accessKeyResponse = Unirest.get(cloudURL + "/api/v2/test-requests/key").header("Authorization", "Basic YWRtaW46QWIxMjM0NTY=").asString();
-//    JSONObject json = new JSONObject(accessKeyResponse.getBody());
-//    String accessKey = json.getString("key");
