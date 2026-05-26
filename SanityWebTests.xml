@@ -1,13 +1,16 @@
-<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 
-<suite name="Parallel Test Suite"
-  parallel="methods"
-  thread-count="10"
-  data-provider-thread-count="18">
+<suite name="Test Suite" parallel="tests" thread-count="2">
 
-  <test name="Parallel_Device_Test">
+  <test name="iOS_Device_Test">
     <classes>
-      <class name="tests.SeeTestClientSanityWebTests"/>
+      <class name="tests.SeeTestClientSanityWebTestsiOS"/>
+    </classes>
+  </test>
+
+  <test name="Android_Device_Test">
+    <classes>
+      <class name="tests.SeeTestClientSanityWebTestsAndroid"/>
     </classes>
   </test>
 
