@@ -41,7 +41,7 @@ public class SeeTestClientSanityWebTestsAndroid {
                 deviceData.add(new Object[]{ udid, os, deviceId, osVersion });
             }
         }
-        System.out.println("Total Available devices : " + deviceData.size());
+        System.out.println("Total Available Android devices : " + deviceData.size());
         GridClient grid = new GridClient(accessKey, cloudURL);
         grid.setLogger(Utils.initDefaultLogger(Level.OFF));
 
@@ -50,7 +50,7 @@ public class SeeTestClientSanityWebTestsAndroid {
             String udid = (String) device[0];
             String deviceQuery = "@serialnumber='" + udid + "'";
 
-            System.out.println((i + 1) + ". Running test on device : " + udid);
+            System.out.println((i + 1) + ". Running test on Android device : " + udid);
             Client client = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3,
                     TimeUnit.MINUTES.toMillis(5));
             client.setReporter("xml", "", "ClientWebTest - " + udid);
