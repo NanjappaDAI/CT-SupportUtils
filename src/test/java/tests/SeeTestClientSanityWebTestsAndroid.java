@@ -18,7 +18,8 @@ public class SeeTestClientSanityWebTestsAndroid {
 
     private static final String cloudURL = "https://uscloud.experitest.com";
     private static final String accessKey = System.getenv("KEY_TO_REBECCA");
-//    private static final String accessKey = "aut_1_BOam4oOXuJFMnR8c3JOBJ6gDILqfBf80vvsZPO8-CHQ=";
+//    private static final String accessKey = "";
+//        private static final String cloudURL = "https://lisbon.experitest.com";
 
     private boolean GoogleValidated = false;
 
@@ -46,30 +47,56 @@ public class SeeTestClientSanityWebTestsAndroid {
         grid.setLogger(Utils.initDefaultLogger(Level.OFF));
 
         for (int i = 0; i < deviceData.size(); i++) {
-            Object[] device = deviceData.get(i);
-            String udid = (String) device[0];
-            String deviceQuery = "@serialnumber='" + udid + "'";
+            Client client = null;
 
-            System.out.println((i + 1) + ". Running test on Android device : " + udid);
-            Client client = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3,
-                    TimeUnit.MINUTES.toMillis(5));
-            client.setReporter("xml", "", "ClientWebTest - " + udid);
-            androidWebTest(client);
+                Object[] device = deviceData.get(i);
+                String udid = (String) device[0];
+                String deviceId = (String) device[2];
+                String deviceQuery = "@serialnumber='" + udid + "'";
+                System.out.println((i + 1) + ". Running test on Android device : " + udid);
 
-            String apiUrl = cloudURL + "/api/v1/devices/" + "/http-request";
-            HttpResponse<String> apiResponse = Unirest.post(apiUrl).header("Authorization", "Bearer " + accessKey)
-                    .header("content-type", "application/json").body("{\"url\":\"https://text.npr.org\"}").asString();
-            boolean ok = apiResponse.getStatus() == 200;
-            client.report(
-                    ok ? "API validation returned 200 OK" : "API validation failed | HTTP " + apiResponse.getStatus(),
-                    ok);
+                try {
+                client = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
+                client.setReporter("xml", "", "ClientWebTest - " + udid);
+                androidWebTest(client);
 
-            String testStatus = GoogleValidated ? "PASSED" : "FAILED";
-            String msg = "Validation " + testStatus + " | Google: " + (GoogleValidated ? "OK" : "FAIL");
-            client.setReportStatus(testStatus, msg);
-            client.generateReport(false);
-            client.releaseClient();
-            System.out.println("Released device : " + udid);
+                String apiUrl = cloudURL + "/api/v1/devices/" + deviceId + "/http-request";
+                HttpResponse<String> apiResponse =
+                        Unirest.post(apiUrl)
+                                .header("Authorization", "Bearer " + accessKey)
+                                .header("content-type", "application/json")
+                                .body("{\"url\":\"https://text.npr.org\"}")
+                                .asString();
+
+                boolean ok = apiResponse.getStatus() == 200;
+                client.report(ok ? "API validation returned 200 OK" : "API validation failed | HTTP " + apiResponse.getStatus(), ok);
+                String testStatus = GoogleValidated ? "PASSED" : "FAILED";
+                String msg = "Validation " + testStatus + " | Google: " + (GoogleValidated ? "OK" : "FAIL");
+                client.setReportStatus(testStatus, msg);
+
+            } catch (Exception e) {
+                System.out.println("Test failed for device: " + e.getMessage());
+                e.printStackTrace();
+                if (client != null) {
+                    try {
+                        client.setReportStatus(
+                                "FAILED",
+                                "Exception occurred: " + e.getMessage()
+                        );
+                    } catch (Exception ignored) {
+                    }
+                }
+            } finally {
+                if (client != null) {
+                    try {
+                        client.generateReport(false);
+                        client.releaseClient();
+                        System.out.println("Released device");
+                    } catch (Exception e) {
+                        System.out.println("Failed to release client: " + e.getMessage());
+                    }
+                }
+            }
         }
     }
 
