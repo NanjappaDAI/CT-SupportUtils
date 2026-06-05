@@ -16,12 +16,14 @@ import org.testng.annotations.Test;
 
 public class SeeTestClientSanityWebTestsiOS {
 
+        private static final String accessKey = System.getenv("KEY_TO_REBECCA");
     private static final String cloudURL = "https://uscloud.experitest.com";
-    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
+//    private static final String accessKey = "";
 //    private static final String accessKey = "";
 //        private static final String cloudURL = "https://lisbon.experitest.com";
-
+    private static final List<String> failedTestsList = new ArrayList<>();
     private boolean GoogleValidated = false;
+    private static String testname = null;
 
     @Test
     public void runTests() throws UnirestException {
@@ -36,7 +38,10 @@ public class SeeTestClientSanityWebTestsiOS {
             String osVersion = item.getString("osVersion");
             String status = item.getString("displayStatus");
             String deviceId = item.getString("id");
-            if ("Available".equalsIgnoreCase(status) && "iOS".equalsIgnoreCase(os)) {
+            if ("Available".equalsIgnoreCase(status)
+//                    && osVersion.startsWith("18")
+            )
+            {
                 deviceData.add(new Object[]{ udid, os, deviceId, osVersion });
             }
         }
@@ -48,13 +53,16 @@ public class SeeTestClientSanityWebTestsiOS {
             Client client = null;
                 Object[] device = deviceData.get(i);
                 String udid = (String) device[0];
+//                String udid = "00008132-000C29393483001C";
                 String deviceId = (String) device[2];
+               String osVersion = (String) device[3];
                 String deviceQuery = "@serialnumber='" + udid + "'";
-                System.out.println((i + 1) + ". Running test on Android device : " + udid);
+                testname = "ClientWebTest - " + udid + " - " + osVersion;
+                System.out.println((i + 1) + ". Running test on iOS device : " + udid);
             try {
-                client = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
-                client.setReporter("xml", "", "ClientWebTest - " + udid);
-                iOSWebTest(client);
+                client = grid.lockDeviceForExecution(    testname, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
+                client.setReporter("xml", "", testname);
+                iOSWebTest(client, testname);
 
                 String apiUrl = cloudURL + "/api/v1/devices/" + deviceId + "/http-request";
                 HttpResponse<String> apiResponse =
@@ -75,9 +83,7 @@ public class SeeTestClientSanityWebTestsiOS {
                 e.printStackTrace();
                 if (client != null) {
                     try {
-                        client.setReportStatus(
-                                "FAILED",
-                                "Exception occurred: " + e.getMessage()
+                        client.setReportStatus("FAILED", "Exception occurred: " + e.getMessage()
                         );
                     } catch (Exception ignored) {
                     }
@@ -90,20 +96,21 @@ public class SeeTestClientSanityWebTestsiOS {
                         System.out.println("Released device");
                     } catch (Exception e) {
                         System.out.println("Failed to release client: " + e.getMessage());
+                        String log = "Exception occurred in : " + e.getMessage();
+                        failedTestsList.add(testname + log.substring(log.indexOf(":") + 1).trim());
                     }
                 }
             }
         }
+        printFailedTests();
     }
 
-    private void iOSWebTest(Client client) {
+    private void iOSWebTest(Client client, String testName) {
         try {
             client.launch("safari:http://google.com", true, false);
             client.sleep(4000);
-            client.waitForElement("NATIVE",
-                    "//*[@class='UIAView' and contains(@name,'Can') and contains(@name,'Open Page')]", 0, 4000);
-            if (client.isElementFound("NATIVE",
-                    "//*[@class='UIAView' and contains(@name,'Can') and contains(@name,'Open Page')]", 0)) {
+            client.waitForElement("NATIVE", "//*[@class='UIAView' and contains(@name,'Can') and contains(@name,'Open Page')]", 0, 4000);
+            if (client.isElementFound("NATIVE", "//*[@class='UIAView' and contains(@name,'Can') and contains(@name,'Open Page')]", 0)) {
                 client.report("Can't open page element detected", false);
             } else if (client.isElementFound("WEB", "//*[@text='Sign in']", 0)) {
                 client.report("Google home page seen", true);
@@ -111,7 +118,8 @@ public class SeeTestClientSanityWebTestsiOS {
             } else if (client.isElementFound("WEB", "//*[@text='Got it']", 0)) {
                 client.report("Google home page seen", true);
                 GoogleValidated = true;
-            } else if (client.isElementFound("WEB", "//*[@aria-label='Google' or @text='Sign in']", 0)) {
+            } else if (client.isElementFound("WEB", "//*[@aria-label='Google' or @text='Sign in']", 0))
+            {
                 client.report("Google home page seen", true);
                 GoogleValidated = true;
             } else {
@@ -120,6 +128,13 @@ public class SeeTestClientSanityWebTestsiOS {
             }
         } catch (Exception e) {
             String log = "Exception occurred in : " + e.getMessage();
+            failedTestsList.add(testname + " - " + log.substring(log.lastIndexOf(":") + 1).replaceAll("\\s+", " ").trim());
         }
+    }
+
+    public void printFailedTests() {
+        System.out.println("start-here");
+        failedTestsList.forEach(System.out::println);
+        System.out.println("end-here");
     }
 }
