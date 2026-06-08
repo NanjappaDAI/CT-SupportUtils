@@ -4,126 +4,72 @@ import com.experitest.client.Client;
 import com.experitest.client.GridClient;
 import com.experitest.client.Utils;
 import com.experitest.client.log.Level;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.testng.annotations.Test;
 
-public class SeeTestClientSanityWebTestsAndroid {
-
-    private static final String cloudURL = "https://uscloud.experitest.com";
-    private static final String accessKey = System.getenv("KEY_TO_REBECCA");
-//    private static final String accessKey = "";
-//        private static final String cloudURL = "https://lisbon.experitest.com";
-
-    private boolean GoogleValidated = false;
-
+public class SeeTestClientSanityWebTestsAndroid extends BaseWebSanityTest {
 
     @Test
     public void runTests() throws UnirestException {
-        System.out.printf("KEY_TO_REBECCA" + accessKey);
-        HttpResponse<String> response =
-                Unirest.get(cloudURL + "/api/v1/devices").header("Authorization", "Bearer " + accessKey).asString();
-        JSONArray dataArray = new JSONObject(response.getBody()).getJSONArray("data");
-        List<Object[]> deviceData = new ArrayList<>();
-        for (int i = 0; i < dataArray.length(); i++) {
-            JSONObject item = dataArray.getJSONObject(i);
-            String udid = item.getString("udid");
-            String os = item.getString("deviceOs");
-            String osVersion = item.getString("osVersion");
-            String status = item.getString("displayStatus");
-            String deviceId = item.getString("id");
-            if ("Available".equalsIgnoreCase(status) && "Android".equalsIgnoreCase(os)) {
-                deviceData.add(new Object[]{ udid, os, deviceId, osVersion });
-            }
-        }
-        System.out.println("Total Available Android devices : " + deviceData.size());
+        List<Object[]> devices = fetchDevices("Android");
+        System.out.println("Total Available Android devices : " + devices.size());
         GridClient grid = new GridClient(accessKey, cloudURL);
         grid.setLogger(Utils.initDefaultLogger(Level.OFF));
 
-        for (int i = 0; i < deviceData.size(); i++) {
-            Client client = null;
-
-                Object[] device = deviceData.get(i);
-                String udid = (String) device[0];
-                String deviceId = (String) device[2];
-                String deviceQuery = "@serialnumber='" + udid + "'";
-                System.out.println((i + 1) + ". Running test on Android device : " + udid);
-
+        for (int i = 0; i < devices.size(); i++) {
+                Client client = null;
+                googleValidated = false;
+                DeviceContext ctx = buildDeviceContext(devices.get(i), "Android-Web-Test - ");
+                System.out.println((i + 1) + ". Running test on Android device : " + ctx.udid);
                 try {
-                client = grid.lockDeviceForExecution("ClientWebTest - " + udid, deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
-                client.setReporter("xml", "", "ClientWebTest - " + udid);
-                androidWebTest(client);
-
-                String apiUrl = cloudURL + "/api/v1/devices/" + deviceId + "/http-request";
-                HttpResponse<String> apiResponse =
-                        Unirest.post(apiUrl)
-                                .header("Authorization", "Bearer " + accessKey)
-                                .header("content-type", "application/json")
-                                .body("{\"url\":\"https://text.npr.org\"}")
-                                .asString();
-
-                boolean ok = apiResponse.getStatus() == 200;
-                client.report(ok ? "API validation returned 200 OK" : "API validation failed | HTTP " + apiResponse.getStatus(), ok);
-                String testStatus = GoogleValidated ? "PASSED" : "FAILED";
-                String msg = "Validation " + testStatus + " | Google: " + (GoogleValidated ? "OK" : "FAIL");
-                client.setReportStatus(testStatus, msg);
-
-            } catch (Exception e) {
-                System.out.println("Test failed for device: " + e.getMessage());
-                e.printStackTrace();
-                if (client != null) {
-                    try {
-                        client.setReportStatus(
-                                "FAILED",
-                                "Exception occurred: " + e.getMessage()
-                        );
-                    } catch (Exception ignored) {
+                client = grid.lockDeviceForExecution(ctx.testName, ctx.deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
+                client.setReporter("xml", "", ctx.testName);
+                androidWebTest(client, ctx);
+                runApiValidation(client, ctx.deviceId);
+                client.setReportStatus(googleValidated ? "PASSED" : "FAILED", "GoogleValidated=" + googleValidated);
+                } catch (Exception e) {
+                    String error = "Test failed for device " + ctx.udid + " : " + e.getMessage();
+                    failedTestsList.add(error);
+                    if (client != null) {
+                        try {
+                            client.setReportStatus("FAILED", e.getMessage());
+                        } catch (Exception ignored) {
+                        }
                     }
-                }
-            } finally {
-                if (client != null) {
-                    try {
-                        client.generateReport(false);
-                        client.releaseClient();
-                        System.out.println("Released device");
-                    } catch (Exception e) {
-                        System.out.println("Failed to release client: " + e.getMessage());
-                    }
-                }
-            }
+                } finally {
+                    releaseClient(client, ctx);            }
         }
-    }
+        printFailedTests();
+        }
 
 
-    private void androidWebTest(Client client) {
+    private void androidWebTest(Client client, DeviceContext ctx) {
         try {
             client.launch("chrome:http://google.com", true, false);
             client.sleep(4000);
             client.waitForElement("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]", 0, 4000);
             if (client.isElementFound("WEB", "//*[@text='Sign in']", 0)) {
                 client.report("Google home page seen", true);
-                GoogleValidated = true;
+                googleValidated = true;
             } else if (client.isElementFound("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]",
                     0)) {
                 client.report("Can't open page element detected", false);
             } else if (client.isElementFound("WEB", "//*[@text='Got it']", 0)) {
                 client.report("Google home page seen", true);
-                GoogleValidated = true;
+                googleValidated = true;
             } else if (client.isElementFound("WEB", "//*[@aria-label='Google' or @text='Sign in']", 0)) {
                 client.report("Google home page seen", true);
-                GoogleValidated = true;
+                googleValidated = true;
             } else {
                 client.report("Google home page NOT seen", false);
-                GoogleValidated = false;
+                googleValidated = false;
             }
         } catch (Exception e) {
-            String log = "Exception occurred in : " + e.getMessage();
+            int idx = e.getMessage().lastIndexOf(":");
+            String msg = (idx != -1) ? e.getMessage().substring(idx + 1) : e.getMessage();
+            failedTestsList.add(ctx.testName + " - " + msg.replaceAll("\\s+", " ").trim());
         }
     }
 }
