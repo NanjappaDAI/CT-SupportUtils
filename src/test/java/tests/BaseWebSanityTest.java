@@ -10,10 +10,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public abstract class BaseWebSanityTest {
-//    protected static final String cloudURL = "https://uscloud.experitest.com";
-//    protected static final String accessKey = System.getenv("KEY_TO_REBECCA");
-    protected static final String cloudURL = "https://lisbon.experitest.com";
-    protected static final String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
+    protected static final String cloudURL = "https://uscloud.experitest.com";
+    protected static final String accessKey = System.getenv("KEY_TO_REBECCA");
+//    protected static final String cloudURL = "https://lisbon.experitest.com";
+//    protected static final String accessKey = "";
     protected final List<String> failedTestsList = new ArrayList<>();
     protected boolean googleValidated = false;
 
