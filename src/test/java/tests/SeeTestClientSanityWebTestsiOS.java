@@ -41,7 +41,7 @@ public class SeeTestClientSanityWebTestsiOS extends BaseWebSanityTest {
             } finally {
                 releaseClient(client, ctx);            }
         }
-        printFailedTests();
+        printFailedTests("ios");
     }
 
     private void iOSWebTest(Client client, DeviceContext ctx) {

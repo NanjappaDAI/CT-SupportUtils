@@ -41,7 +41,7 @@ public class SeeTestClientSanityWebTestsAndroid extends BaseWebSanityTest {
                 } finally {
                     releaseClient(client, ctx);            }
         }
-        printFailedTests();
+        printFailedTests("android");
         }
 
 
