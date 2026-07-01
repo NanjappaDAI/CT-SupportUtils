@@ -12,10 +12,10 @@ import org.json.JSONObject;
 import static org.testng.util.Strings.escapeHtml;
 
 public abstract class BaseWebSanityTest {
-//    protected static final String cloudURL = "https://uscloud.experitest.com";
-//    protected static final String accessKey = System.getenv("KEY_TO_REBECCA");
-    protected static final String cloudURL = "https://lisbon.experitest.com";
-    protected static final String accessKey = "aut_1_0mSJdlr88QCFpa-2LJ28I3wXQhpi0Brmqof-V2g7Kyw=";
+    protected static final String cloudURL = "https://uscloud.experitest.com";
+    protected static final String accessKey = System.getenv("KEY_TO_REBECCA");
+//    protected static final String cloudURL = "https://lisbon.experitest.com";
+//    protected static final String accessKey = "";
     protected final List<String> failedTestsList = new ArrayList<>();
     protected boolean googleValidated = false;
 
@@ -54,24 +54,17 @@ public abstract class BaseWebSanityTest {
         );
     }
 
-    protected void runApiValidation(Client client, String deviceId) throws UnirestException {
-
+    protected void runApiValidation(Client client, String deviceId, String testName) throws UnirestException {
         String apiUrl = cloudURL + "/api/v1/devices/" + deviceId + "/http-request";
-
         HttpResponse<String> apiResponse =
                 Unirest.post(apiUrl)
                         .header("Authorization", "Bearer " + accessKey)
                         .header("content-type", "application/json")
                         .body("{\"url\":\"https://text.npr.org\"}")
                         .asString();
-
         boolean ok = apiResponse.getStatus() == 200;
-
-        client.report(
-                ok ? "API validation returned 200 OK"
-                        : "API validation failed | HTTP " + apiResponse.getStatus(),
-                ok
-        );
+        if (!ok) failedTestsList.add(testName + " - API validation failed | HTTP " + apiResponse.getStatus());
+        client.report(ok ? "API validation returned 200 OK" : "API validation failed | HTTP " + apiResponse.getStatus(), ok);
     }
 
     protected void releaseClient(Client client, DeviceContext ctx) {
@@ -91,9 +84,7 @@ public abstract class BaseWebSanityTest {
         System.out.println("<html><body>");
         System.out.println("<table border='1'>");
         System.out.println("<tr><th>" + osString.toUpperCase() + " Failures</th></tr>");
-        failedTestsList.forEach(
-                failure -> System.out.println("<tr><td>" + escapeHtml(failure) + "</td></tr>")
-        );
+        failedTestsList.forEach(failure -> System.out.println("<tr><td>" + escapeHtml(failure) + "</td></tr>"));
         System.out.println("</table>");
         System.out.println("</body></html>");
         System.out.println("end-here-" + osString);

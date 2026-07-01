@@ -27,7 +27,7 @@ public class SeeTestClientSanityWebTestsiOS extends BaseWebSanityTest {
                 client = grid.lockDeviceForExecution(ctx.testName, ctx.deviceQuery, 3, TimeUnit.MINUTES.toMillis(5));
                 client.setReporter("xml", "", ctx.testName);
                 iOSWebTest(client, ctx);
-                runApiValidation(client, ctx.deviceId);
+                runApiValidation(client, ctx.deviceId , ctx.testName);
                 client.setReportStatus(googleValidated ? "PASSED" : "FAILED", "GoogleValidated=" + googleValidated);
             } catch (Exception e) {
                 String error = "Test failed for device " + ctx.udid + " : " + e.getMessage();
