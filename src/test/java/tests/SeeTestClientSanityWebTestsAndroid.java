@@ -47,6 +47,7 @@ public class SeeTestClientSanityWebTestsAndroid extends BaseWebSanityTest {
 
     private void androidWebTest(Client client, DeviceContext ctx) {
         try {
+            client.setProperty("android.chrome.avoid.first.launch.experience", "true");
             client.launch("chrome:http://google.com", true, false);
             client.sleep(4000);
             client.waitForElement("NATIVE", "//*[contains(@name,'Can') and contains(@name,'Open Page')]", 0, 4000);
